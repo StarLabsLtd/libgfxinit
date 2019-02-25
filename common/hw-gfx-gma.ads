@@ -43,7 +43,8 @@ is
       Ivybridge,
       Haswell,
       Broadwell,
-      Broxton,
+      Apollolake,
+      Geminilake,
       Skylake,
       Kabylake);
 

@@ -174,7 +174,7 @@ private package HW.GFX.GMA.Config is
 
    Have_DVI_I              : constant Boolean := Analog_I2C_Port /= PCH_DAC;
 
-   Has_Presence_Straps           : <genbool> := not Gen_Broxton;
+   Broxton_On                    : <genbool> := CPU_Apollolake or CPU_Geminilake;
    Is_ULT                        : <hswsklbool> :=
      ((Gen_Haswell or Gen_Skylake) and then CPU_Var = ULT);
    Is_ULX                        : <hswsklbool> :=
@@ -192,7 +192,7 @@ private package HW.GFX.GMA.Config is
    Has_Pipe_MSA_Misc             : <genbool> := Haswell_On;
    Has_Pipeconf_Misc             : <hswbool> := Broadwell_On;
    Has_Pipeconf_BPC              : <hswbool> := not CPU_Haswell;
-   Has_Plane_Control             : <genbool> := Broxton_On;
+   Has_Plane_Control             : <genbool> := Apollolake_On;
    Has_DSP_Linoff                : <genbool> := Up_To_Ironlake;
    Has_PF_Pipe_Select            : <ilkhswbool> := CPU_Ivybridge or CPU_Haswell;
    Has_Ivybridge_Cursors         : <ilkbool> := Ivybridge_On;
@@ -246,6 +246,8 @@ private package HW.GFX.GMA.Config is
      ((Gen_Haswell and then Is_LP) or Skylake_On);
 
    Has_DDI_PHYs                  : <genbool> := Gen_Broxton;
+   Has_Dual_DDI_Phy_BC           : <genbool> := Apollolake_On;
+   Has_Port_PLL_Pwr_En           : <genbool> := Geminilake_On;
 
    Has_DDI_D                     : <hswsklbool> :=
      ((Gen_Haswell or Gen_Skylake) and then not Is_LP);
@@ -265,7 +267,7 @@ private package HW.GFX.GMA.Config is
 
    ----------- GMBUS: -----------
    Ungate_GMBUS_Unit_Level       : <genbool> := Skylake_On;
-   GMBUS_Alternative_Pins        : <genbool> := Gen_Broxton or Cannon_Point_On;
+   GMBUS_Alternative_Pins        : <genbool> := Broxton_On or Cannon_Point_On;
    Has_PCH_GMBUS                 : <genbool> := Ironlake_On;
 
    ----------- Power: -----------

@@ -126,7 +126,7 @@ else ifneq ($(filter Ironlake,$(CONFIG_GFX_GMA_GENERATION)),)
 subdirs-y += ironlake
 else ifneq ($(filter Haswell,$(CONFIG_GFX_GMA_GENERATION)),)
 subdirs-y += haswell_shared haswell
-else ifneq ($(filter Broxton,$(CONFIG_GFX_GMA_GENERATION)),)
+else ifneq ($(filter Apollolake Geminilake,$(CONFIG_GFX_GMA_GENERATION)),)
 subdirs-y += haswell_shared broxton
 else ifneq ($(filter Skylake,$(CONFIG_GFX_GMA_GENERATION)),)
 subdirs-y += haswell_shared skylake

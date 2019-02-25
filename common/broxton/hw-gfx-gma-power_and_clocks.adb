@@ -215,15 +215,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
    ----------------------------------------------------------------------------
 
-   CDClk_Ref : constant := 19_200_000;
-
    function Normalize_CDClk (CDClk : in Int64) return Config.CDClk_Range is
-     (if    CDClk <= CDClk_Ref    then CDClk_Ref
-      elsif CDClk <= 144_000_000  then 144_000_000
-      elsif CDClk <= 288_000_000  then 288_000_000
-      elsif CDClk <= 384_000_000  then 384_000_000
-      elsif CDClk <= 576_000_000  then 576_000_000
-                                  else 624_000_000);
+     Config.Valid_CDClk (Freq)
 
    procedure Get_Cur_CDClk (CDClk : out Config.CDClk_Range)
    is
@@ -239,12 +232,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
       Freq : constant Config.CDClk_Range := Normalize_CDClk (Freq_In);
       VCO : constant Int64 :=
          CDClk_Ref *
-           (if Freq = CDClk_Ref then
-               0
-            elsif Freq = 624_000_000 then
-               65
-            else
-               60);
+            Config.Broxton_CDClk_Ref * Config.CDClk_Ratio (Freq);
       CDCLK_CD2X_Div_Sel : constant Word32 :=
         (case VCO / Freq is   -- CDClk = VCO / 2 / Div
             when 2      => CDCLK_CD2X_DIV_SEL_1,
@@ -279,7 +267,8 @@ package body HW.GFX.GMA.Power_And_Clocks is
       Unset_And_Set_Mask
         (Register    => BXT_DE_PLL_CTL,
          Mask_Unset  => BXT_DE_PLL_RATIO_MASK,
-         Mask_Set    => Word32 (VCO / CDClk_Ref));
+         Mask_Set    => (if Freq = Config.Broxton_CDClk_Ref then 0 else
+                           Word32 (VCO / Config.Broxton_CDClk_Ref)));
       Write
         (Register => BXT_DE_PLL_ENABLE,
          Value    => BXT_DE_PLL_PLL_ENABLE);
@@ -323,7 +312,7 @@ package body HW.GFX.GMA.Power_And_Clocks is
 
       -- Linux' i915 never keeps the PLL disabled but runs it
       -- at a "ratio" of 0 with CDClk at its reference clock.
-      Set_CDClk (CDClk_Ref);
+      Set_CDClk (Config.Broxton_CDClk_Ref);
 
       PW_Off (PW1);
    end Post_All_Off;

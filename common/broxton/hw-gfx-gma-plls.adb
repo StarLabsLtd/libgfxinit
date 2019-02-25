@@ -170,6 +170,8 @@ is
       PLL_10         : Registers_Index;
       PCS_DW12_LN01  : Registers_Index;
       PCS_DW12_GRP   : Registers_Index;
+      TX_DW5_LN0     : Registers_Index;
+      TX_DW5_GRP     : Registers_Index;
    end record;
    type Port_PLL_Array is array (Valid_PLLs) of Port_PLL_Regs;
 
@@ -187,7 +189,9 @@ is
          PLL_9          => BXT_PORT_PLL_9_A,
          PLL_10         => BXT_PORT_PLL_10_A,
          PCS_DW12_LN01  => BXT_PORT_PCS_DW12_01_A,
-         PCS_DW12_GRP   => BXT_PORT_PCS_DW12_GRP_A),
+         PCS_DW12_GRP   => BXT_PORT_PCS_DW12_GRP_A,
+         TX_DW5_LN0     => BXT_PORT_TX_DW5_LN0_A,
+         TX_DW5_GRP     => BXT_PORT_TX_DW5_GRP_A),
       DPLL_B =>
         (PLL_ENABLE     => BXT_PORT_PLL_ENABLE_B,
          PLL_EBB_0      => BXT_PORT_PLL_EBB_0_B,
@@ -201,7 +205,9 @@ is
          PLL_9          => BXT_PORT_PLL_9_B,
          PLL_10         => BXT_PORT_PLL_10_B,
          PCS_DW12_LN01  => BXT_PORT_PCS_DW12_01_B,
-         PCS_DW12_GRP   => BXT_PORT_PCS_DW12_GRP_B),
+         PCS_DW12_GRP   => BXT_PORT_PCS_DW12_GRP_B,
+         TX_DW5_LN0     => BXT_PORT_TX_DW5_LN0_B,
+         TX_DW5_GRP     => BXT_PORT_TX_DW5_GRP_B),
       DPLL_C =>
         (PLL_ENABLE     => BXT_PORT_PLL_ENABLE_C,
          PLL_EBB_0      => BXT_PORT_PLL_EBB_0_C,
@@ -215,11 +221,15 @@ is
          PLL_9          => BXT_PORT_PLL_9_C,
          PLL_10         => BXT_PORT_PLL_10_C,
          PCS_DW12_LN01  => BXT_PORT_PCS_DW12_01_C,
-         PCS_DW12_GRP   => BXT_PORT_PCS_DW12_GRP_C));
+         PCS_DW12_GRP   => BXT_PORT_PCS_DW12_GRP_C,
+         TX_DW5_LN0     => BXT_PORT_TX_DW5_LN0_C,
+         TX_DW5_GRP     => BXT_PORT_TX_DW5_GRP_C));
 
    PORT_PLL_ENABLE                     : constant :=      1 * 2 ** 31;
    PORT_PLL_ENABLE_LOCK                : constant :=      1 * 2 ** 30;
    PORT_PLL_ENABLE_REF_SEL             : constant :=      1 * 2 ** 27;
+   PORT_PLL_POWER_ENABLE               : constant :=      1 * 2 ** 26;
+   PORT_PLL_POWER_STATE                : constant :=      1 * 2 ** 25;
 
    PORT_PLL_EBB0_P1_SHIFT              : constant :=               13;
    PORT_PLL_EBB0_P1_MASK               : constant := 16#07# * 2 ** 13;
@@ -336,8 +346,17 @@ is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
-      Set_Mask    (PORT (P).PLL_ENABLE, PORT_PLL_ENABLE_REF_SEL);   -- non-SSC ref
-      Unset_Mask  (PORT (P).PLL_EBB_4,  PORT_PLL_EBB4_10BIT_CLK_ENABLE);
+      Set_Mask (PORT (P).PLL_ENABLE, PORT_PLL_ENABLE_REF_SEL);   -- non-SSC ref
+
+      if Config.Has_Port_PLL_Pwr_En then
+         Set_Mask (PORT (P).PLL_ENABLE, PORT_PLL_POWER_ENABLE);
+         Wait_Set_Mask
+           (Register => PORT (P).PLL_ENABLE,
+            Mask     => PORT_PLL_POWER_STATE,
+            TOut_MS  => 1);   -- 200us
+      end if;
+
+      Unset_Mask (PORT (P).PLL_EBB_4,  PORT_PLL_EBB4_10BIT_CLK_ENABLE);
 
       Unset_And_Set_Mask
         (Register    => PORT (P).PLL_EBB_0,
@@ -388,7 +407,16 @@ is
       Wait_Set_Mask
         (Register => PORT (P).PLL_ENABLE,
          Mask     => PORT_PLL_ENABLE_LOCK,
-         TOut_MS  => 1);   -- 100us
+         TOut_MS  => 1);   -- 200us
+
+      if (Config.Has_DCC_Delay_Range) then
+         declare
+            Delay_Range : Word32;
+         begin
+            Read (PORT (P).DW5_LN0, Delay_Range);
+            Delay_Range := Delay_Range or PORT_TX_DW5_DCC_DELAY_RANGE_2;
+            Write (PORT (P).DW5_GRP, Delay_Range);
+      end if;
 
       Read (PORT (P).PCS_DW12_LN01, PCS);
       PCS := PCS and not PORT_PCS_LANE_STAGGER_MASK;
@@ -473,6 +501,13 @@ is
    begin
       if PLL in Valid_PLLs then
          Unset_Mask (PORT (PLL).PLL_ENABLE, PORT_PLL_ENABLE);
+         if Config.Has_Port_PLL_Pwr_En then
+            Unset_Mask (PORT (P).PLL_ENABLE, PORT_PLL_POWER_ENABLE);
+            Wait_Unset_Mask
+              (Register => PORT (P).PLL_ENABLE,
+               Mask     => PORT_PLL_POWER_STATE,
+               TOut_MS  => 1);   -- 200us
+         end if;
       end if;
    end Free;
 

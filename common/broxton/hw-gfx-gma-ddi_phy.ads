@@ -16,7 +16,7 @@ with HW.GFX.GMA.DP_Info;
 
 private package HW.GFX.GMA.DDI_Phy is
 
-   type T is (BC, A);
+   type T is (BC, A, C);
 
    procedure Power_On (Phy : T);
    procedure Power_Off (Phy : T);
