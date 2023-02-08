@@ -832,12 +832,17 @@ package body HW.GFX.GMA.Pipe_Setup is
       end if;
    end Planes_Off;
 
-   procedure Off (Pipe : Pipe_Index)
+   procedure Off (Pipe : Pipe_Index; Framebuffer : Framebuffer_Type)
    is
    begin
       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
 
       Planes_Off (Controllers (Pipe), Cursors (Pipe));
+
+      if Framebuffer.Offset = VGA_PLANE_FRAMEBUFFER_OFFSET then
+         Legacy_VGA_Off;
+      end if;
+
       Transcoder.Off (Pipe);
       Panel_Fitter_Off (Controllers (Pipe));
       Transcoder.Clk_Off (Pipe);

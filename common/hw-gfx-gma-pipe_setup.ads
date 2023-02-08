@@ -29,7 +29,9 @@ is
    with
       Pre => Config_Helpers.Valid_FB (Framebuffer, Port_Cfg.Mode);
 
-   procedure Off (Pipe : Pipe_Index);
+   procedure Off
+     (Pipe : Pipe_Index;
+      Framebuffer : Framebuffer_Type);
 
    procedure Legacy_VGA_Off;
 
